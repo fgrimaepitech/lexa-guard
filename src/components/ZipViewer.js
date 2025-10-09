@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import JSZip from "jszip";
 import * as pdfjsLib from "pdfjs-dist";
 
@@ -183,16 +183,43 @@ export default function ZipViewer() {
   const [minPredFilter, setMinPredFilter] = useState("");
   const [sortBy, setSortBy] = useState("name"); // name | prediction | size
   const [sortDir, setSortDir] = useState("asc"); // asc | desc
-  const [previewUrl, setPreviewUrl] = useState(null);
+  // Side panel preview removed; use modal instead
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalUrl, setModalUrl] = useState(null);
+  const [namesByPath, setNamesByPath] = useState({}); // path -> "Nom prénom"
 
-  function setPreviewSafe(url) {
-    setPreviewUrl((prev) => {
-      if (prev && prev !== url) {
-        try { URL.revokeObjectURL(prev); } catch (_) {}
-      }
-      return url;
-    });
+  // setPreviewSafe removed; modal is the preview mechanism
+
+  // Revoke item object URLs when the items list is replaced or on unmount
+  useEffect(() => {
+    return () => {
+      try {
+        if (Array.isArray(items)) {
+          for (const it of items) {
+            if (it && it.url) URL.revokeObjectURL(it.url);
+          }
+        }
+      } catch (_) {}
+    };
+  }, [items]);
+
+  function openModal(url) {
+    setModalUrl(url);
+    setModalOpen(true);
   }
+
+  function closeModal() {
+    setModalOpen(false);
+  }
+
+  useEffect(() => {
+    if (!modalOpen) return;
+    function onKey(e) {
+      if (e.key === "Escape") closeModal();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [modalOpen]);
 
   function formatPrediction(pred) {
     if (typeof pred !== "number" || !Number.isFinite(pred)) return "—";
@@ -253,19 +280,45 @@ export default function ZipViewer() {
     return sorted;
   }
 
+  function onChangeName(path, value) {
+    setNamesByPath((prev) => ({ ...prev, [path]: value }));
+  }
+
+  function exportToExcel() {
+    const rows = filteredAndSorted(items, nameFilter, minPredFilter, sortBy, sortDir);
+    const headers = ["Nom", "Prediction", "Taille", "Nom prénom"];
+    const escapeHtml = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const trHeader = `<tr>${headers.map((h) => `<th>${escapeHtml(h)}</th>`).join("")}</tr>`;
+    const trRows = rows
+      .map((it) => {
+        const name = it.name || it.path || "";
+        const pred = formatPrediction(it.prediction);
+        const size = formatSize(it.size);
+        const person = namesByPath[it.path] || "";
+        return `<tr><td>${escapeHtml(name)}</td><td>${escapeHtml(pred)}</td><td>${escapeHtml(size)}</td><td>${escapeHtml(person)}</td></tr>`;
+      })
+      .join("");
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><table>${trHeader}${trRows}</table></body></html>`;
+    const blob = new Blob([html], { type: "application/vnd.ms-excel" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `lexa-guard-export-${Date.now()}.xls`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
   const onPick = async (file) => {
     if (!file) return;
     setItems([]);
     setError(null);
     setLoading(true);
     setProgress(0);
-    // Revoke previous preview URL if any when starting a new import
-    setPreviewUrl((prev) => {
-      if (prev) {
-        try { URL.revokeObjectURL(prev); } catch (_) {}
-      }
-      return null;
-    });
+    // Clear modal
+    setModalOpen(false);
+    setModalUrl(null);
 
     const counters = { files: 0, bytes: 0 };
 
@@ -304,9 +357,14 @@ export default function ZipViewer() {
   return (
     <div className="flex flex-col pt-24 w-full h-full items-center justify-center">
     <div className="flex flex-col items-center justify-center w-full h-full">
-    <h1 className="mb-4 text-4xl font-extrabold  leading-none tracking-tight">
-      ✍️ Lexa Guard
-    </h1>
+    <div className="flex flex-col items-center justify-center">
+      <h1 className="mb-4 text-4xl font-extrabold  leading-none tracking-tight">
+        ✍️ Lexa Guard
+      </h1>
+      <p className="text-gray-200">
+        Pour lutter contre la fraude aux projets de français.
+      </p>
+    </div>
 
       {items.length === 0 && <label
     htmlFor="File"
@@ -329,7 +387,7 @@ export default function ZipViewer() {
 
     <span className="mt-4 text-lg font-medium dark:text-white">Importer le zip</span>
 
-    <span
+<span
   className="mt-2 text-base inline-block rounded border border-gray-200 bg-gray-50 px-3 py-1.5 text-center font-medium text-gray-700 shadow-sm hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
 >
   Parcourir les fichiers
@@ -353,7 +411,16 @@ export default function ZipViewer() {
         <div className="flex flex-col items-center gap-8 w-full h-full pt-12">
           <h3 className="text-2xl font-bold">🧪 Résultats</h3>
 
-          <div className="w-10/12 grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
+          <div className="flex justify-end">
+              <button
+                className="mt-2 px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-500 text-white"
+                onClick={exportToExcel}
+              >
+                Exporter pour Excel (en .xls)
+              </button>
+            </div>
+
+          <div className="w-3/4 gap-4 items-start">
             <div className="lg:col-span-2 flex flex-col gap-4">
             <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
               <div className="flex-1">
@@ -388,6 +455,7 @@ export default function ZipViewer() {
                     <th className="px-4 py-3 cursor-pointer" onClick={() => toggleSort("name")}>Nom {renderSort("name")}</th>
                     <th className="px-4 py-3 cursor-pointer" onClick={() => toggleSort("prediction")}>Prediction {renderSort("prediction")}</th>
                     <th className="px-4 py-3 cursor-pointer" onClick={() => toggleSort("size")}>Taille {renderSort("size")}</th>
+                    <th className="px-4 py-3">Nom prénom</th>
                     <th className="px-4 py-3">Preview</th>
                   </tr>
                 </thead>
@@ -395,16 +463,27 @@ export default function ZipViewer() {
                   {filteredAndSorted(items, nameFilter, minPredFilter, sortBy, sortDir).map((it) => (
                     <tr key={it.path} className="border-t border-gray-700 hover:bg-gray-800/60">
                       <td className="px-4 py-3 break-all">{it.name || it.path}</td>
-                      <td className="px-4 py-3">{formatPrediction(it.prediction)}</td>
+                      <td className="px-4 py-3" style={{ color: it.prediction > 0.85 ? "red" : it.prediction > 0.70 ? "orange" : "green" }}>{formatPrediction(it.prediction)}</td>
                       <td className="px-4 py-3">{formatSize(it.size)}</td>
                       <td className="px-4 py-3">
+                        <input
+                          type="text"
+                          value={namesByPath[it.path] || ""}
+                          onChange={(e) => onChangeName(it.path, e.target.value)}
+                          className="w-full rounded border border-gray-600 bg-transparent px-2 py-1 text-white"
+                          placeholder="Nom prénom"
+                        />
+                      </td>
+                      <td className="px-4 py-3">
                         {it.url ? (
-                          <button
-                            className="px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-500 text-white"
-                            onClick={() => setPreviewSafe(it.url)}
-                          >
-                            Ouvrir
-                          </button>
+                          <div className="flex gap-2">
+                            <button
+                              className="px-3 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white"
+                              onClick={() => openModal(it.url)}
+                            >
+                              Voir le pdf
+                            </button>
+                          </div>
                         ) : (
                           <span className="text-gray-500">—</span>
                         )}
@@ -416,22 +495,34 @@ export default function ZipViewer() {
             </div>
             </div>
 
-            <div className="lg:col-span-1">
-              <div className="rounded border border-gray-700 overflow-hidden bg-gray-900">
-                <div className="px-3 py-2 border-b border-gray-700 text-gray-300 text-sm">Preview</div>
-                <div className="h-[480px]">
-                  {previewUrl ? (
-                    <embed title="PDF Preview" src={previewUrl} type="application/pdf" className="w-full h-full" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-500 text-sm">Aucun document sélectionné</div>
-                  )}
+            {/* Side panel removed; modal is used instead */}
                 </div>
-              </div>
-            </div>
-          </div>
         </div>
       )}
     </div>
+
+    {modalOpen && (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) closeModal();
+        }}
+      >
+        <div className="relative w-11/12 h-[85vh] max-w-5xl bg-gray-900 rounded shadow-lg border border-gray-700 overflow-hidden">
+          <button
+            className="absolute top-2 right-2 px-2.5 py-1.5 rounded bg-gray-700 hover:bg-gray-600 text-white text-sm"
+            onClick={closeModal}
+          >
+            Fermer
+          </button>
+          {modalUrl ? (
+            <embed title="PDF Modal" src={modalUrl} type="application/pdf" className="w-full h-full" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-gray-400">Aucun document</div>
+          )}
+        </div>
+      </div>
+    )}
     
     </div>
   );

@@ -1,0 +1,63 @@
+{
+  "appId": "com.lexaguard.app",
+  "productName": "Lexa Guard",
+  "directories": {
+    "output": "dist"
+  },
+  "files": [
+    "build/**/*",
+    "public/electron.js",
+    "node_modules/**/*"
+  ],
+  "mac": {
+    "category": "public.app-category.productivity",
+    "target": [
+      {
+        "target": "dmg",
+        "arch": ["x64", "arm64"]
+      },
+      {
+        "target": "zip",
+        "arch": ["x64", "arm64"]
+      }
+    ]
+  },
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64", "ia32"]
+      },
+      {
+        "target": "portable",
+        "arch": ["x64", "ia32"]
+      }
+    ]
+  },
+  "linux": {
+    "target": [
+      {
+        "target": "AppImage",
+        "arch": ["x64"]
+      },
+      {
+        "target": "deb",
+        "arch": ["x64"]
+      },
+      {
+        "target": "rpm",
+        "arch": ["x64"]
+      }
+    ],
+    "category": "Office"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true
+  },
+  "dmg": {
+    "title": "Lexa Guard"
+  }
+}

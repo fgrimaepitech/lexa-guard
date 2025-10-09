@@ -1,12 +1,18 @@
 {
   "name": "lexa-guard",
   "version": "0.1.0",
+  "description": "Lexa Guard - Pour lutter contre la fraude aux projets de français",
+  "author": {
+    "name": "Lexa Guard Team",
+    "email": "contact@lexaguard.com"
+  },
   "private": true,
   "dependencies": {
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^13.5.0",
+    "electron-is-dev": "^2.0.0",
     "jszip": "^3.10.1",
     "pdfjs-dist": "^5.4.296",
     "react": "^19.2.0",
@@ -15,12 +21,20 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "tailwindcss -i ./src/style.css -o ./src/tailwind.css --watch & react-scripts start",
-    "build": "tailwindcss -i ./src/style.css -o ./src/tailwind.css && react-scripts build",
+    "start": "tailwindcss -i ./src/tailwind.css -o ./src/tailwind.css --watch & react-scripts start",
+    "build": "tailwindcss -i ./src/tailwind.css -o ./src/tailwind.css && react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "tailwind:build": "tailwindcss -i ./src/style.css -o ./src/tailwind.css",
-    "tailwind:watch": "tailwindcss -i ./src/style.css -o ./src/tailwind.css --watch"
+    "tailwind:build": "tailwindcss -i ./src/tailwind.css -o ./src/tailwind.css",
+    "tailwind:watch": "tailwindcss -i ./src/tailwind.css -o ./src/tailwind.css --watch",
+    "electron": "electron .",
+    "electron-dev": "concurrently \"npm start\" \"wait-on http://localhost:3000 && electron .\"",
+    "electron-pack": "npm run build && electron-builder",
+    "electron-pack-mac": "npm run build && electron-builder --mac",
+    "electron-pack-win": "npm run build && electron-builder --win",
+    "electron-pack-linux": "npm run build && electron-builder --linux",
+    "electron-pack-all": "npm run build && electron-builder --mac --win --linux",
+    "preelectron-pack": "npm run build"
   },
   "eslintConfig": {
     "extends": [
@@ -43,7 +57,13 @@
   "devDependencies": {
     "@tailwindcss/cli": "^4.1.14",
     "autoprefixer": "^10.4.21",
+    "concurrently": "^8.2.2",
+    "electron": "^32.0.0",
+    "electron-builder": "^25.0.0",
     "postcss": "^8.5.6",
-    "tailwindcss": "^3.4.18"
-  }
+    "tailwindcss": "^3.4.18",
+    "wait-on": "^7.2.0"
+  },
+  "main": "public/electron.js",
+  "homepage": "./"
 }
