@@ -9,6 +9,13 @@
     "public/electron.js",
     "node_modules/**/*"
   ],
+  "publish": [
+    {
+      "provider": "github",
+      "owner": "fgrimaepitech",
+      "repo": "lexa-guard"
+    }
+  ],
   "mac": {
     "category": "public.app-category.productivity",
     "target": [
