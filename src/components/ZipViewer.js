@@ -368,7 +368,7 @@ export default function ZipViewer() {
 
       {items.length === 0 && <label
     htmlFor="File"
-    className="flex flex-col items-center rounded border border-gray-300 bg-white p-4 shadow-sm sm:p-6 dark:border-gray-700 dark:bg-transparent text-white w-5/12"
+    className="flex flex-col items-center rounded border border-gray-300 p-4 shadow-sm sm:p-6 dark:border-gray-700 bg-transparent text-white w-5/12"
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"
