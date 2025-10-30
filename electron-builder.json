@@ -26,13 +26,14 @@
     "target": [
       {
         "target": "nsis",
-        "arch": ["x64", "ia32"]
+        "arch": ["x64"]
       },
       {
         "target": "portable",
-        "arch": ["x64", "ia32"]
+        "arch": ["x64"]
       }
-    ]
+    ],
+    "signAndEditExecutable": false
   },
   "linux": {
     "target": [
@@ -42,10 +43,6 @@
       },
       {
         "target": "deb",
-        "arch": ["x64"]
-      },
-      {
-        "target": "rpm",
         "arch": ["x64"]
       }
     ],
