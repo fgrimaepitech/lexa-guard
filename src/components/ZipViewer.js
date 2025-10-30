@@ -36,8 +36,6 @@ function plusJoin(text) {
   return text.split(/\s+/g).filter(Boolean).join("+");
 }
 
-let total = 0;
-
 // POST to API and parse: const prediction = <number>;
 async function fetchPrediction(plusJoined) {
   const resp = await fetch("https://ghostbuster-api-gm7xhurxnq-uw.a.run.app", {
@@ -151,15 +149,17 @@ async function extractZipRecursively(buffer, base, depth, counters, onPdf, onPro
         console.error(`PDF processing failed for ${fullPath}:`, err);
         }
         const url = URL.createObjectURL(blob);
+        // Extract the parent zip name from the path
+        const parts = fullPath.split(ZIP_MARK);
+        const zipName = parts.length > 1 ? parts[parts.length - 2].split("/").pop() : fullPath.split("/").pop();
         out.push({
-            path: fullPath.split("/").pop().slice(0, -4) + `-${total}.pdf`,
-            name: fullPath.split("/").pop().slice(0, -4) + `-${total}.pdf`,
+            path: fullPath,
+            name: zipName,
             isPdf,
             size: blob.size,
             prediction,
             url
         });
-        total += 1;
         counters.processedPdfs = (counters.processedPdfs || 0) + 1;
         if (onProgress && totalPdfs > 0) {
           const pct = Math.floor((counters.processedPdfs / totalPdfs) * 100);
@@ -323,7 +323,6 @@ export default function ZipViewer() {
     const counters = { files: 0, bytes: 0 };
 
     try {
-      total = 0;
       const buf = await file.arrayBuffer();
       const topBase = `${file.name}${ZIP_MARK}`;
       // Pre-count total PDFs to process for file-count-based progress
