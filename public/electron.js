@@ -60,11 +60,12 @@ autoUpdater.on('checking-for-update', () => {
 });
 
 autoUpdater.on('update-available', (info) => {
+  if (!mainWindow) return;
   dialog.showMessageBox(mainWindow, {
     type: 'info',
-    title: 'Update Available',
-    message: `A new version (${info.version}) is available!`,
-    buttons: ['Download', 'Later'],
+    title: 'Mise à jour disponible',
+    message: `Une nouvelle version (${info.version}) est disponible !`,
+    buttons: ['Télécharger', 'Plus tard'],
     defaultId: 0
   }).then((result) => {
     if (result.response === 0) {
@@ -74,20 +75,18 @@ autoUpdater.on('update-available', (info) => {
 });
 
 autoUpdater.on('update-not-available', () => {
-  dialog.showMessageBox(mainWindow, {
-    type: 'info',
-    title: 'No Updates',
-    message: 'You are running the latest version.',
-    buttons: ['OK']
-  });
+  if (!mainWindow) return;
+  // Ne pas afficher de notification si l'app vient de démarrer
+  // Uniquement si l'utilisateur vérifie manuellement via le menu
 });
 
 autoUpdater.on('error', (err) => {
   console.error('Update error:', err);
+  if (!mainWindow) return;
   dialog.showMessageBox(mainWindow, {
     type: 'error',
-    title: 'Update Error',
-    message: 'An error occurred while checking for updates.',
+    title: 'Erreur de mise à jour',
+    message: 'Une erreur est survenue lors de la vérification des mises à jour.',
     detail: err.toString(),
     buttons: ['OK']
   });
@@ -95,18 +94,23 @@ autoUpdater.on('error', (err) => {
 
 autoUpdater.on('download-progress', (progressObj) => {
   const percent = Math.round(progressObj.percent);
-  console.log(`Download progress: ${percent}%`);
-  mainWindow.setProgressBar(percent / 100);
+  console.log(`Progression du téléchargement : ${percent}%`);
+  if (mainWindow) {
+    mainWindow.setProgressBar(percent / 100);
+  }
 });
 
 autoUpdater.on('update-downloaded', (info) => {
-  mainWindow.setProgressBar(-1);
+  if (mainWindow) {
+    mainWindow.setProgressBar(-1);
+  }
+  if (!mainWindow) return;
   dialog.showMessageBox(mainWindow, {
     type: 'info',
-    title: 'Update Ready',
-    message: `Version ${info.version} has been downloaded.`,
-    detail: 'The update will be installed when you quit the application.',
-    buttons: ['Restart Now', 'Later'],
+    title: 'Mise à jour prête',
+    message: `La version ${info.version} a été téléchargée.`,
+    detail: 'La mise à jour sera installée à la fermeture de l\'application.',
+    buttons: ['Redémarrer maintenant', 'Plus tard'],
     defaultId: 0
   }).then((result) => {
     if (result.response === 0) {
@@ -116,11 +120,24 @@ autoUpdater.on('update-downloaded', (info) => {
 });
 
 // Function to check for updates
-function checkForUpdates() {
+function checkForUpdates(showNoUpdateDialog = false) {
   if (!isDev) {
+    // Si appelé manuellement, afficher un message même si pas de mise à jour
+    if (showNoUpdateDialog) {
+      autoUpdater.once('update-not-available', () => {
+        if (mainWindow) {
+          dialog.showMessageBox(mainWindow, {
+            type: 'info',
+            title: 'Aucune mise à jour',
+            message: 'Vous utilisez déjà la dernière version.',
+            buttons: ['OK']
+          });
+        }
+      });
+    }
     autoUpdater.checkForUpdates();
   } else {
-    console.log('Auto-update is disabled in development mode');
+    console.log('La mise à jour automatique est désactivée en mode développement');
   }
 }
 
@@ -170,9 +187,9 @@ const template = [
       },
       { type: 'separator' },
       {
-        label: 'Check for Updates...',
+        label: 'Vérifier les mises à jour...',
         click: () => {
-          checkForUpdates();
+          checkForUpdates(true);
         }
       },
       { type: 'separator' },

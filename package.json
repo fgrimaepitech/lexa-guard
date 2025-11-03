@@ -1,6 +1,6 @@
 {
   "name": "lexa-guard",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Lexa Guard - Pour lutter contre la fraude aux projets de français",
   "author": {
     "name": "Lexa Guard Team",
@@ -40,7 +40,12 @@
     "electron-pack-win": "npm run build:react && electron-builder --win",
     "electron-pack-linux": "npm run build:react && electron-builder --linux",
     "electron-pack-all": "npm run build:react && electron-builder --mac --win --linux",
-    "preelectron-pack": "npm run build"
+    "preelectron-pack": "npm run build",
+    "publish:mac": "npm run build:react && electron-builder --mac --publish always",
+    "publish:win": "npm run build:react && electron-builder --win --publish always",
+    "publish:linux": "npm run build:react && electron-builder --linux --publish always",
+    "publish:all": "npm run build:react && electron-builder --mac --win --linux --publish always",
+    "publish:draft": "npm run build:react && electron-builder --publish never"
   },
   "eslintConfig": {
     "extends": [
@@ -71,5 +76,46 @@
     "wait-on": "^7.2.0"
   },
   "main": "public/electron.js",
-  "homepage": "./"
+  "homepage": "./",
+  "build": {
+    "appId": "com.lexaguard.app",
+    "productName": "Lexa Guard",
+    "files": [
+      "build/**/*",
+      "public/electron.js",
+      "public/favicon.ico",
+      "node_modules/**/*"
+    ],
+    "directories": {
+      "buildResources": "public"
+    },
+    "mac": {
+      "category": "public.app-category.education",
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "public/favicon.ico"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "public/favicon.ico"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Education"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "fgrimaepitech",
+      "repo": "lexa-guard",
+      "releaseType": "release"
+    }
+  }
 }
