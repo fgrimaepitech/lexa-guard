@@ -357,9 +357,7 @@ export default function ZipViewer() {
     <div className="flex flex-col pt-24 w-full h-full items-center justify-center">
     <div className="flex flex-col items-center justify-center w-full h-full">
     <div className="flex flex-col items-center justify-center">
-      <h1 className="mb-4 text-4xl font-extrabold  leading-none tracking-tight">
-        ✍️ Lexa Guard
-      </h1>
+      <img src="/lexaguard_logo_text.png" alt="Lexa Guard" width={300} />
       <p className="text-gray-200">
         Pour lutter contre la fraude aux projets de français.
       </p>
